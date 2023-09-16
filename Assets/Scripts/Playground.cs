@@ -68,4 +68,9 @@ public class Playground : MonoBehaviour
         right.transform.position = new Vector3(0, 0, r) + this.transform.position;
         left.transform.position = new Vector3(0, 0, -r) + this.transform.position;
     }
+
+    public float GetWallSize()
+    {
+        return _wallSize * _mulitiplier;
+    }
 }
