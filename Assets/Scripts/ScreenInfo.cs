@@ -9,6 +9,6 @@ public class ScreenInfo : MonoBehaviour
 
     private void Update()
     {
-        _ballCountText.text = Ball.count.ToString();
+        _ballCountText.text = Sphere.Count.ToString();
     }
 }

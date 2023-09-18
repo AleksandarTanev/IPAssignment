@@ -470,7 +470,7 @@ GameObject:
   - component: {fileID: 603143792}
   - component: {fileID: 603143793}
   m_Layer: 0
-  m_Name: BallGenerator
+  m_Name: SphereGenerator
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -503,10 +503,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbdfb6fb6f0dff94b8490529f36e1822, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _numOfBallsToGenerate: 15
+  _numOfBallsToGenerate: 1175
   _ballSpeed: 10
   _playground: {fileID: 609884666}
-  _ballPrefab: {fileID: 2106115196}
+  _spherePrefab: {fileID: 2106115196}
 --- !u!1 &609884665
 GameObject:
   m_ObjectHideFlags: 0
@@ -523,7 +523,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &609884666
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -548,7 +548,7 @@ Transform:
   m_GameObject: {fileID: 609884665}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -1.34, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1267,6 +1267,56 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!1 &1791993606
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1791993608}
+  - component: {fileID: 1791993609}
+  m_Layer: 0
+  m_Name: SpheresManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1791993608
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1791993606}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5.4634075, y: 3.7363532, z: -11.398329}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1791993609
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1791993606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d5e28f71e2ed2847a33f08391b85d94, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _numOfSphereOnClick: 500
+  _volumeBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 14, y: 14, z: 14}
+  _speed: 10
+  spherePrefab: {fileID: 2106115196}
 --- !u!1 &1815838546
 GameObject:
   m_ObjectHideFlags: 0
@@ -1716,7 +1766,7 @@ GameObject:
   - component: {fileID: 2106115193}
   - component: {fileID: 2106115196}
   m_Layer: 0
-  m_Name: BallPrefab
+  m_Name: SpherePrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1778,7 +1828,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 1497b0b720b5d3c4fb46e1fc4e30723a, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1817,12 +1867,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 2106115191}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c91b6f1fdcf6c1641b775668e011d8e1, type: 3}
+  m_Script: {fileID: 11500000, guid: 5897cee4eb6abdd4c8bd7e2a59df49af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  velocity: {x: 0, y: 0, z: 0}
-  speed: 0
-  direction: {x: 0, y: 0, z: 0}
 --- !u!1 &2113965472
 GameObject:
   m_ObjectHideFlags: 0
@@ -1966,3 +2013,4 @@ SceneRoots:
   - {fileID: 603143792}
   - {fileID: 2071777326}
   - {fileID: 910769443}
+  - {fileID: 1791993608}

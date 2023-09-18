@@ -3,28 +3,21 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class Ball : MonoBehaviour
+public class Sphere : MonoBehaviour
 {
-    public static int count;
+    public static int Count;
+    public static float Speed = 10;
 
-    public Vector3 velocity;
-
-    public float speed;
-    public Vector3 direction;
+    public SphereState state;
 
     private Dictionary<string, Vector3> enteredColliders = new Dictionary<string, Vector3>();
 
     private void Start()
     {
-        count += 1;
+        Count += 1;
     }
 
-    private void FixedUpdate()
-    {
-        this.transform.position += (velocity * Time.fixedDeltaTime);
-    }
-    
-    private void OnTriggerEnter(Collider other)
+   /* private void OnTriggerEnter(Collider other)
     {
         Vector3 direction;
 
@@ -47,26 +40,22 @@ public class Ball : MonoBehaviour
             direction = vectorSum.normalized;
         }
 
-        velocity = direction * speed;
-        /*
-        if (enteredColliders.Count > 1)
-        {
-            string msg = "| ";
-            foreach (var item in enteredColliders)
-            {
-                msg += item + " |";
-            }
-            Debug.Log(msg);
-        }*/
+        state.velocity = direction * Sphere.Speed;
     }
 
     private void OnTriggerExit(Collider other)
     {
         enteredColliders.Remove(other.name);
-    }
+    }*/
 
     private void OnDestroy()
     {
-        count -= 1;
+        Count -= 1;
     }
+}
+
+public struct SphereState
+{
+    public Vector3 startingPosition;
+    public Vector3 velocity;
 }
