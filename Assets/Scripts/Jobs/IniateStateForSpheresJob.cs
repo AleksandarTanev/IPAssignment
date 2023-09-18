@@ -1,7 +1,9 @@
 ﻿using Unity.Jobs;
 using Unity.Collections;
 using UnityEngine;
+using Unity.Burst;
 
+[BurstCompile]
 public struct IniateStateForSpheresJob : IJobParallelFor
 {
     public float speed;
