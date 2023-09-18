@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-public class ScreenInfo : MonoBehaviour
+public class UIManager : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI _ballCountText;
-
 
     private SpheresManager manager;
 
