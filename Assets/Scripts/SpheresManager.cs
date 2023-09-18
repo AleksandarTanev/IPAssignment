@@ -27,6 +27,8 @@ public class SpheresManager : MonoBehaviour
 
     private List<SphereState> sphereStates = new List<SphereState>();
 
+    private Ditzel.KdTree<Transform> tree;
+
     private void Start()
     {
         _random = new Unity.Mathematics.Random(1);
@@ -58,6 +60,13 @@ public class SpheresManager : MonoBehaviour
         {
             AdjustSpheresInBorders();
             ApplyVelocities();
+
+            for (int i = 0; i < spheres.Count; i++)
+            {
+                var nearest = tree.FindClosest(spheres[i].transform.position);
+
+                Debug.DrawLine(nearest.position, spheres[i].transform.position);
+            }
         }
     }
 
@@ -90,6 +99,9 @@ public class SpheresManager : MonoBehaviour
 
         spheres.AddRange(newSpheres);
         sphereStates.AddRange(newSphereStates);
+
+        tree = new Ditzel.KdTree<Transform>();
+        tree.AddAll(spheres.Select(s => s.transform).ToList());
     }
 
     private void ApplyVelocities()
