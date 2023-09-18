@@ -15,14 +15,17 @@ public class SpheresManager : MonoBehaviour
     [SerializeField] private float _speed;
 
     [Space]
-    [SerializeField] private Sphere spherePrefab;
+    [SerializeField] private GameObject spherePrefab;
 
-    private List<Sphere> spheres = new List<Sphere>();
+    public int SpheresCount => spheres.Count;
+
+    private List<GameObject> spheres = new List<GameObject>();
 
     private Unity.Mathematics.Random _random;
 
-    private NativeArray<Vector3> velocities;
     private TransformAccessArray allTransforms;
+
+    private List<SphereState> sphereStates = new List<SphereState>();
 
     private void Start()
     {
@@ -75,29 +78,28 @@ public class SpheresManager : MonoBehaviour
         JobHandle jobHandle = job.Schedule(newSpheres.Count, 32);
         jobHandle.Complete();
 
+        var newSphereStates = new List<SphereState>();
         for (int i = 0; i < states.Length; i++)
         {
-            newSpheres[i].state = states[i];
-            newSpheres[i].transform.position = newSpheres[i].state.startingPosition;
+            newSpheres[i].transform.position = states[i].startingPosition;
+
+            newSphereStates.Add(states[i]);
         }
 
         states.Dispose();
 
-
         spheres.AddRange(newSpheres);
+        sphereStates.AddRange(newSphereStates);
     }
 
     private void ApplyVelocities()
     {
-        //NativeArray<SphereState> states = new NativeArray<SphereState>(spheres.Select(x => x.state).ToArray(), Allocator.TempJob);
         NativeArray<Vector3> velocities = new NativeArray<Vector3>(spheres.Count, Allocator.TempJob);
 
         for (int i = 0; i < spheres.Count; i++)
         {
-            velocities[i] = spheres[i].state.velocity;
+            velocities[i] = sphereStates[i].velocity;
         }
-
-        //TransformAccessArray transforms = new TransformAccessArray(spheres.Select(x => x.transform).ToArray(), 32);
 
         SphereVelocityJob job = new SphereVelocityJob()
         {
@@ -109,20 +111,17 @@ public class SpheresManager : MonoBehaviour
         jobHandle.Complete();
 
         velocities.Dispose();
-        //transforms.Dispose();
     }
 
     private void AdjustSpheresInBorders()
     {
-        //NativeArray<SphereState> states = new NativeArray<SphereState>(spheres.Select(x => x.state).ToArray(), Allocator.TempJob);
         NativeArray<Vector3> velocities = new NativeArray<Vector3>(spheres.Count, Allocator.TempJob);
 
         for (int i = 0; i < spheres.Count; i++)
         {
-            velocities[i] = spheres[i].state.velocity;
+            velocities[i] = sphereStates[i].velocity;
         }
 
-        //NativeArray<Vector3> positions = new NativeArray<Vector3>(spheres.Select(x => x.transform.position).ToArray(), Allocator.TempJob);
         NativeArray<Vector3> positions = new NativeArray<Vector3>(spheres.Count, Allocator.TempJob);
 
         for (int i = 0; i < spheres.Count; i++)
@@ -143,16 +142,18 @@ public class SpheresManager : MonoBehaviour
 
         for (int i = 0; i < spheres.Count(); i++)
         {
-            spheres[i].state.velocity = velocities[i];
+            var st = sphereStates[i];
+            st.velocity = velocities[i];
+            sphereStates[i] = st;
         }
 
         velocities.Dispose();
         positions.Dispose();
     }
 
-    private List<Sphere> InstantiateNewSpheres(int num)
+    private List<GameObject> InstantiateNewSpheres(int num)
     {
-        List<Sphere> newSpheres = new List<Sphere>();
+        List<GameObject> newSpheres = new List<GameObject>();
         for (int i = 0; i < num; i++)
         {
             var newSphere = Instantiate(spherePrefab);
@@ -202,20 +203,6 @@ public struct IniateStateForSpheresJob : IJobParallelFor
         return new Vector3(x, y, z) + bounds.center;
     }
 }
-/*
-public struct SphereVelocityJob : IJobParallelForTransform
-{
-    [ReadOnly]
-    public float deltaTime;
-
-    [ReadOnly]
-    public NativeArray<Vector3> velocities;
-
-    public void Execute(int index, TransformAccess transform)
-    {
-        transform.position += velocities[index] * deltaTime;
-    }
-}*/
 
 public struct SphereVelocityJob : IJobParallelForTransform
 {
@@ -286,4 +273,10 @@ public struct AdjustSpheresInBordersJob : IJobParallelFor
             velocities[index] = adjustedDirection * speed;
         }
     }
+}
+
+public struct SphereState
+{
+    public Vector3 startingPosition;
+    public Vector3 velocity;
 }
