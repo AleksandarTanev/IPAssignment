@@ -1,17 +1,27 @@
-using System.Collections;
-using System.Collections.Generic;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 public class TestOctree : MonoBehaviour
 {
+    public BoxCollider boxColliderToSearchIn;
+
     public GameObject[] worldObjects;
     public int nodeMinSize = 5;
 
     private Octree octree;
 
+    private MaterialPropertyBlock block;
+
     private void Start()
     {
-        octree = new Octree(worldObjects, nodeMinSize);
+        block = new MaterialPropertyBlock();
+
+        OctreeObject[] obs = new OctreeObject[worldObjects.Length];
+        for (int i = 0; i < obs.Length; i++)
+        {
+            obs[i] = new OctreeObject(worldObjects[i].GetComponent<Collider>().bounds, i);
+        }
+        octree = new Octree(obs, nodeMinSize);
     }
 
     private void OnDrawGizmos()
@@ -20,5 +30,40 @@ public class TestOctree : MonoBehaviour
         {
             octree.rootNode.Draw();
         }
+
+        if (boxColliderToSearchIn)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireCube(boxColliderToSearchIn.bounds.center, boxColliderToSearchIn.bounds.size);
+        }
+    }
+
+    [Button("Search")]
+    public void Search()
+    {
+        block.SetColor("_Color", Color.white);
+        for (int i = 0; i < worldObjects.Length; i++)
+        {
+            var mr = worldObjects[i].GetComponent<MeshRenderer>();
+            mr.SetPropertyBlock(block);
+        }
+
+        var found = octree.FindDataInBox(boxColliderToSearchIn.bounds);
+
+        block.SetColor("_Color", Color.red);
+
+        foreach (var f in found)
+        {
+            Debug.Log(f.GetLocation());
+
+            var mr = worldObjects[f.index].GetComponent<MeshRenderer>();
+            mr.SetPropertyBlock(block);
+        }
+    }
+
+    [Button("LogDebugInfo")]
+    public void LogDebugInfo()
+    {
+        Debug.Log(octree.rootNode.GetDebugInfo(""));
     }
 }
