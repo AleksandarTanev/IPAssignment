@@ -13,6 +13,11 @@ public class TestOctree : MonoBehaviour
 
     private MaterialPropertyBlock block;
 
+    [Space]
+    public Collider cool_1;
+    public Collider cool_2;
+
+
     private void Start()
     {
         block = new MaterialPropertyBlock();
@@ -23,6 +28,14 @@ public class TestOctree : MonoBehaviour
             obs[i] = new OctreeObject(worldObjects[i].GetComponent<Collider>().bounds, i);
         }
         octree = new Octree(obs, nodeMinSize);
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            Debug.Log(cool_1.bounds.Intersects(cool_2.bounds));
+        }
     }
 
     private void OnDrawGizmos()
@@ -55,7 +68,7 @@ public class TestOctree : MonoBehaviour
 
         foreach (var f in found)
         {
-            Debug.Log(f.GetLocation());
+           // Debug.Log(f.GetLocation());
 
             var mr = worldObjects[f.index].GetComponent<MeshRenderer>();
             mr.SetPropertyBlock(block);

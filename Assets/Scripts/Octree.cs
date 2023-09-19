@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static UnityEngine.UI.GridLayoutGroup;
 
 public class Octree
 {
@@ -70,7 +71,7 @@ public class OctreeObject
 
 public class OctreeNode
 {
-	public static int PreferredMaxDataPerNode = 4;
+	public static int PreferredMaxDataPerNode = 1;
 
     private Bounds nodeBounds;
     private float minSize;
@@ -152,6 +153,13 @@ public class OctreeNode
             new OctreeNode(new Bounds(nodeBounds.center + new Vector3(-Offset,  Offset, -Offset), childActualSize), minSize),
             new OctreeNode(new Bounds(nodeBounds.center + new Vector3( Offset,  Offset, -Offset), childActualSize), minSize)
         };
+
+        foreach (var d in data)
+        {
+            AddDataToChildren(d);
+        }
+
+        data = null;
     }
 
     public void FindDataInRange(Vector3 searchLocation, float searchRange, HashSet<OctreeObject> outFoundData)
@@ -181,7 +189,9 @@ public class OctreeNode
                 foreach (var d in data)
                 {
                     if (searchBounds.Intersects(d.GetBounds()))
+                    { 
                         outFoundData.Add(d);
+                    }
                 }
 
                 return;
@@ -195,7 +205,11 @@ public class OctreeNode
         foreach (var c in children)
         {
             if (c.Overlaps(searchBounds))
+            {
+                Debug.Log(1);
+
                 c.FindDataInBox(searchBounds, outFoundData, bExactBounds);
+            }
         }
     }
 
