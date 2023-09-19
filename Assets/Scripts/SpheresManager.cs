@@ -178,6 +178,9 @@ public class SpheresManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        allTransforms.Dispose();
+        if (allTransforms.isCreated)
+        {
+            allTransforms.Dispose();
+        }
     }
 }
