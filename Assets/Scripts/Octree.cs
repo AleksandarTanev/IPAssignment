@@ -1,3 +1,4 @@
+using OtherOctree;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -30,76 +31,107 @@ public class Octree
     {
 		foreach (var go in worldObjects)
 		{
-			rootNode.AddObject(go);
+			rootNode.AddData(new OctreeObject(go.GetComponent<Collider>().bounds));
 		}
     }
 }
 
+public struct OctreeObject
+{
+	private Bounds bounds;
+
+    public OctreeObject(Bounds bounds)
+    {
+		this.bounds = bounds;
+    }
+
+    public Bounds GetBounds() => bounds;
+}
+
 public class OctreeNode
 {
-	private Bounds nodeBounds;
+	public static int PreferredMaxDataPerNode = 1;
+
+    private Bounds nodeBounds;
     private float minSize;
 
-	private Bounds[] childBounds;
-
 	private OctreeNode[] children;
+	private HashSet<OctreeObject> data;
 
     public OctreeNode(Bounds b, float minNodeSize)
 	{
 		nodeBounds = b;
 		minSize = minNodeSize;
-
-		float quarter = nodeBounds.size.y / 4f;
-		float childLength = nodeBounds.size.y / 2;
-		var childActualSize = new Vector3(childLength, childLength, childLength);
-
-        childBounds = new Bounds[8];
-        childBounds[0] = new Bounds(nodeBounds.center + new Vector3(-quarter, quarter, -quarter), childActualSize);
-        childBounds[1] = new Bounds(nodeBounds.center + new Vector3(quarter, quarter, -quarter), childActualSize);
-        childBounds[2] = new Bounds(nodeBounds.center + new Vector3(-quarter, quarter, quarter), childActualSize);
-        childBounds[3] = new Bounds(nodeBounds.center + new Vector3(quarter, quarter, quarter), childActualSize);
-        childBounds[4] = new Bounds(nodeBounds.center + new Vector3(-quarter, -quarter, -quarter), childActualSize);
-        childBounds[5] = new Bounds(nodeBounds.center + new Vector3(quarter, -quarter, -quarter), childActualSize);
-        childBounds[6] = new Bounds(nodeBounds.center + new Vector3(-quarter, -quarter, quarter), childActualSize);
-        childBounds[7] = new Bounds(nodeBounds.center + new Vector3(quarter, -quarter, quarter), childActualSize);
     }
 
-	public void AddObject(GameObject go)
-	{
-		DivideAndAdd(go);
-	}
-
-    private void DivideAndAdd(GameObject go)
+    bool CanSplit()
     {
-		if (nodeBounds.size.y <= minSize)
-		{
-			return;
-		}
+        return nodeBounds.size.x >= minSize &&
+               nodeBounds.size.y >= minSize &&
+               nodeBounds.size.z >= minSize;
+    }
 
-		if (children == null)
-		{
-            children = new OctreeNode[8];
-        }
+    private void SplitNode()
+	{
+        float Offset = nodeBounds.size.y / 4f;
+        float childLength = nodeBounds.size.y / 2;
+        var childActualSize = new Vector3(childLength, childLength, childLength);
 
-		bool dividing = false;
-		for (int i = 0; i < children.Length; i++)
+        children = new OctreeNode[8]
 		{
-			if (children[i] == null)
-			{
-				children[i] = new OctreeNode(childBounds[i], minSize);
+			new OctreeNode(new Bounds(nodeBounds.center + new Vector3(-Offset, -Offset,  Offset), childActualSize), minSize),
+			new OctreeNode(new Bounds(nodeBounds.center + new Vector3( Offset, -Offset,  Offset), childActualSize), minSize),
+			new OctreeNode(new Bounds(nodeBounds.center + new Vector3(-Offset, -Offset, -Offset), childActualSize), minSize),
+			new OctreeNode(new Bounds(nodeBounds.center + new Vector3( Offset, -Offset, -Offset), childActualSize), minSize),
+			new OctreeNode(new Bounds(nodeBounds.center + new Vector3(-Offset,  Offset,  Offset), childActualSize), minSize),
+			new OctreeNode(new Bounds(nodeBounds.center + new Vector3( Offset,  Offset,  Offset), childActualSize), minSize),
+			new OctreeNode(new Bounds(nodeBounds.center + new Vector3(-Offset,  Offset, -Offset), childActualSize), minSize),
+			new OctreeNode(new Bounds(nodeBounds.center + new Vector3( Offset,  Offset, -Offset), childActualSize), minSize)
+		};
+    }
+
+	public void AddData(OctreeObject ob)
+	{
+        if (children == null)
+        {
+			// is this the first time we're adding data to this node
+			if (data == null)
+			{ 
+				data = new HashSet<OctreeObject>(); 
 			}
 
-			if (childBounds[i].Intersects(go.GetComponent<Collider>().bounds))
+			// should we split AND are we able to split?
+			if ((data.Count + 1) >= OctreeNode.PreferredMaxDataPerNode && CanSplit())
 			{
-				dividing = true;
-				children[i].DivideAndAdd(go);
-            }
-		}
+				SplitNode();
 
-		if (!dividing)
-		{
-			children = null;
-		}
+				AddDataToChildren(ob);
+			}
+			else
+			{ 
+				data.Add(ob); 
+			}
+
+            return;
+        }
+
+        AddDataToChildren(ob);
+	}
+
+    private void AddDataToChildren(OctreeObject data)
+    {
+        foreach (var child in children)
+        {
+			if (child.Overlaps(data.GetBounds()))
+			{ 
+				child.AddData(data);
+			}
+        }
+    }
+
+    private bool Overlaps(Bounds Other)
+    {
+        return nodeBounds.Intersects(Other);
     }
 
     public void Draw()
