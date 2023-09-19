@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class TestOctree : MonoBehaviour
 {
+    [Space]
     public BoxCollider boxColliderToSearchIn;
 
     public GameObject[] worldObjects;

@@ -70,7 +70,7 @@ public class OctreeObject
 
 public class OctreeNode
 {
-	public static int PreferredMaxDataPerNode = 2;
+	public static int PreferredMaxDataPerNode = 4;
 
     private Bounds nodeBounds;
     private float minSize;
@@ -218,15 +218,22 @@ public class OctreeNode
 
     public string GetDebugInfo(string prefix)
     {
-        if (children == null)
+        string msg;
+        if (data == null)
         {
-            return prefix + "0";
+            msg = prefix + "0";
+        }
+        else
+        {
+            msg = prefix + data.Count() + " | " + $"[{string.Join(", ", data.Select(x => x.index))}]";
         }
 
-        string msg = prefix + data.Count();
-        foreach (var c in children)
+        if (children != null)
         {
-            msg += "\n" + c.GetDebugInfo(prefix + "-");
+            foreach (var c in children)
+            {
+                msg += "\n" + c.GetDebugInfo(prefix + "-");
+            }
         }
 
         return msg;
