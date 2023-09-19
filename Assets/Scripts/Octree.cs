@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using static UnityEngine.UI.GridLayoutGroup;
 
 public class Octree
 {
@@ -20,10 +19,17 @@ public class Octree
 		Vector3 sizeVector = new Vector3(maxSize, maxSize, maxSize) * 0.5f;
 		bounds.SetMinMax(bounds.center - sizeVector, bounds.center + sizeVector);
 
-		rootNode = new OctreeNode(bounds, minNodeSize);
+        rootNode = new OctreeNode(bounds, minNodeSize);
 
 		AddObjects(objects);
 	}
+
+    public Octree(OctreeObject[] objects, float minNodeSize, Bounds bounds)
+    {
+        rootNode = new OctreeNode(bounds, minNodeSize);
+
+        AddObjects(objects);
+    }
 
     public void AddObjects(OctreeObject[] objects)
     {
@@ -206,8 +212,6 @@ public class OctreeNode
         {
             if (c.Overlaps(searchBounds))
             {
-                Debug.Log(1);
-
                 c.FindDataInBox(searchBounds, outFoundData, bExactBounds);
             }
         }

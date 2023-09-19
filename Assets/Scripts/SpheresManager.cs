@@ -19,13 +19,15 @@ public class SpheresManager : MonoBehaviour
 
     public int SpheresCount => spheres.Count;
 
-    private List<GameObject> spheres = new List<GameObject>();
+    public List<GameObject> spheres = new List<GameObject>();
 
     private Unity.Mathematics.Random _random;
 
     private TransformAccessArray allTransforms;
 
     private List<SphereState> sphereStates = new List<SphereState>();
+
+    public Bounds PlaygroundBounds => _volumeBounds;
 
     private void Start()
     {
