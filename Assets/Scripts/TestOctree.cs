@@ -5,8 +5,6 @@ public class TestOctree : MonoBehaviour
 {
     public SpheresManager spheresManager;
 
-
-
     [Space]
     public BoxCollider boxColliderToSearchIn;
 
@@ -59,6 +57,7 @@ public class TestOctree : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+        //return;
         if (octree == null || octree.rootNode == null)
         {
             return;

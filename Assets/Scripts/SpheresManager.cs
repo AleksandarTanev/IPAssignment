@@ -58,8 +58,8 @@ public class SpheresManager : MonoBehaviour
 
         if (spheres.Count > 0)
         {
-            AdjustSpheresInBorders();
-            ApplyVelocities();
+            //AdjustSpheresInBorders();
+            //ApplyVelocities();
         }
     }
 

@@ -562,7 +562,7 @@ public unsafe struct KDTree : IDisposable
         TreeNode* nodePtr = m_NodesPtr + nodeIndex;
         ulong entryIndex = ((ulong)beginPtr - (ulong)m_EntriesPtr) / (uint)sizeof(Entry);
 
-        * nodePtr = new TreeNode
+        *nodePtr = new TreeNode
         {
             beginEntryIndex = (uint)entryIndex,
             count = (uint)((endPtr - beginPtr) / sizeof(Entry)) + 1
