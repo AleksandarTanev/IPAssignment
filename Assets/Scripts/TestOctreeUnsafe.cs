@@ -1,12 +1,11 @@
 using OtherOctree;
 using Sirenix.OdinInspector;
 using System;
-using System.Collections;
 using System.Linq;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs.LowLevel.Unsafe;
-using Unity.VisualScripting.Antlr3.Runtime.Tree;
+using Unity.Mathematics;
 using UnityEngine;
 using static FOctree;
 
@@ -18,22 +17,60 @@ public class TestOctreeUnsafe : MonoBehaviour
 
     private void Start()
     {
-        BuildFlatArray();
+        //BuildTree();
+
     }
 
+    [Button("Test KDTree")]
     private void Test()
     {
+        var positions = spheresManager.spheres.Select(x => (float3)x.transform.position).ToArray();
+        KDTree tree = new KDTree(positions.Length, Allocator.Persistent, KDTree.DefaultKDTreeParams);
 
+        NativeArray<float3> nativePositions = new NativeArray<float3>(positions, Allocator.TempJob);
+        var jobHandle = tree.BuildTree(nativePositions);
+        jobHandle.Complete();
+        nativePositions.Dispose();
+
+
+        float3 asd = spheresManager.spheres[0].transform.position;
+        NativeArray<KDTree.Neighbour> neighbours = new NativeArray<KDTree.Neighbour>(100, Allocator.TempJob);
+        int count = tree.GetEntriesInRange(asd, 10, ref neighbours);
+
+        Debug.Log(count);
+
+        for (int i = 0; i < count; i++)
+        {
+            var xxx = neighbours[i];
+            Debug.Log(xxx.index);
+        }
+
+        neighbours.Dispose();
+        tree.Dispose();
     }
 
     // public static FNode[] flatNodeArray;
 
-    [Button("BuildFlatArray")]
-    private void BuildFlatArray()
+    //[Button("BuildTree")]
+    private void BuildTree()
     {
+        if (tree.isCreated)
+        {
+            tree.Dispose();
+        }
+
         tree = new FOctree();
         tree.playgroundBounds = spheresManager.PlaygroundBounds;
         tree.BuildTree();
+
+        var a = tree.GetNodeAtIndex(4);
+
+        NativeHashSet<int> asd = new NativeHashSet<int>(1, Allocator.Temp);
+        asd.Add(123);
+        asd.Add(23);
+        asd.Add(55);
+
+        asd.Dispose();
     }
 
     public static int CalcLengthForDepth(int depth)
@@ -59,7 +96,7 @@ public class TestOctreeUnsafe : MonoBehaviour
 
         if (Application.isPlaying)
         {
-            for (int i = 0; i < tree.length; i++)
+            for (int i = 0; i < tree.m_Length; i++)
             {
                 FNode node = tree.GetNodeAtIndex(i);
                 Gizmos.DrawWireCube(node.bounds.center, node.bounds.size);
@@ -69,30 +106,42 @@ public class TestOctreeUnsafe : MonoBehaviour
 
     private void OnDestroy()
     {
-        tree.Dispose();
+        //tree.Dispose();
     }
 }
 
+[NativeContainer]
+[NativeContainerSupportsMinMaxWriteRestriction]
 public unsafe struct FOctree : IDisposable
 {
+    public FNode* rootNodePtr;
+    public int m_Length;
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+    public int m_MinIndex;
+    public int m_MaxIndex;
+    private AtomicSafetyHandle m_Safety;
+    [NativeSetClassTypeToNullOnSchedule] private DisposeSentinel m_DisposeSentinel;
+#endif
+
     public bool isCreated;
 
     public static int depth = 2;
     public static int childrenPerNode = 8;
 
-    public FNode* startPtr;
-    public int length;
-
     private Allocator allocator;
-
+    
     public Bounds playgroundBounds;
 
     public void BuildTree()
     {
-        length = CalcLengthForDepth(depth);
+        var length = CalcLengthForDepth(depth);
         allocator = Allocator.Persistent;
 
-        startPtr = (FNode*)UnsafeUtility.Malloc((sizeof(FNode) * length), JobsUtility.CacheLineSize, allocator);
+        long totalSize = UnsafeUtility.SizeOf<FNode>() * length;
+
+        rootNodePtr = (FNode*)UnsafeUtility.Malloc(totalSize, JobsUtility.CacheLineSize, allocator);
+        UnsafeUtility.MemClear(rootNodePtr, totalSize);
 
         var rootNode = new FNode()
         {
@@ -101,11 +150,17 @@ public unsafe struct FOctree : IDisposable
             localIndex = 0,
             levelIndex = 0,
             bounds = playgroundBounds,
-            tree = this,
         };
 
-        *startPtr = rootNode;
-        rootNode.SplitIfPossible();
+        *rootNodePtr = rootNode;
+        rootNode.SplitIfPossible(this);
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+        m_Length = length;
+        m_MinIndex = 0;
+        m_MaxIndex = length - 1;
+        DisposeSentinel.Create(out m_Safety, out m_DisposeSentinel, 0, allocator);
+#endif
 
         isCreated = true;
     }
@@ -124,18 +179,25 @@ public unsafe struct FOctree : IDisposable
 
     public FNode GetNodeAtIndex(int index)
     {
-        return *(startPtr + index);
+        if (index < m_MinIndex || index > m_MaxIndex)
+            Debug.LogError("Index out of range: " + index);
+
+        return *(rootNodePtr + index);
     }
 
     public void Dispose()
     {
-        UnsafeUtility.Free(startPtr, allocator);
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+        DisposeSentinel.Dispose(ref m_Safety, ref m_DisposeSentinel);
+#endif
+
+        UnsafeUtility.Free(rootNodePtr, allocator);
+        rootNodePtr = null;
+        m_Length = 0;
     }
 
     public struct FNode
     {
-        public FOctree tree;
-
         public int depth;
 
         public int index; // index in main array
@@ -145,7 +207,9 @@ public unsafe struct FOctree : IDisposable
 
         public Bounds bounds;
 
-        public void SplitIfPossible()
+        public NativeHashSet<int> content;
+
+        public void SplitIfPossible(FOctree tree)
         {
             if (depth + 1 > FOctree.depth)
             {
@@ -173,14 +237,23 @@ public unsafe struct FOctree : IDisposable
                 newNode.localIndex = i;
                 newNode.levelIndex = levelIndex * FOctree.childrenPerNode + i;
                 newNode.index = CalcLengthForDepth(depth) + newNode.levelIndex;
-                newNode.tree = tree;
                 newNode.bounds = childBounds[i];
 
-                var newPtr = (tree.startPtr + newNode.index);
+                var newPtr = (tree.rootNodePtr + newNode.index);
                 *newPtr = newNode;
 
-                newNode.SplitIfPossible();
+                newNode.SplitIfPossible(tree);
             }
+        }
+
+        public void AddObject(int x)
+        {
+            if (!content.IsCreated)
+            {
+                content = new NativeHashSet<int>();
+            }
+
+            content.Add(x);
         }
 
         public override string ToString()

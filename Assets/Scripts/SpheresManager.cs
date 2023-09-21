@@ -5,7 +5,8 @@ using UnityEngine.Jobs;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.UIElements;
-using UnityEditor;
+using Unity.Mathematics;
+using static Unity.Collections.AllocatorManager;
 
 public class SpheresManager : MonoBehaviour
 {
@@ -16,54 +17,55 @@ public class SpheresManager : MonoBehaviour
 
     [Space]
     [SerializeField] private GameObject spherePrefab;
+    private float sphereToSphereColRange;
 
     public int SpheresCount => spheres.Count;
 
     public List<GameObject> spheres = new List<GameObject>();
 
-    private Unity.Mathematics.Random _random;
-
     private TransformAccessArray allTransforms;
 
     private List<SphereState> sphereStates = new List<SphereState>();
 
+    private KDTree tree;
+
     public Bounds PlaygroundBounds => _volumeBounds;
+
+    private MaterialPropertyBlock blockWhiteColor;
+    private MaterialPropertyBlock blockRedColor;
 
     private void Start()
     {
-        _random = new Unity.Mathematics.Random(1);
+        sphereToSphereColRange = spherePrefab.transform.localScale.x;
+
+        blockWhiteColor = new MaterialPropertyBlock();
+        blockRedColor = new MaterialPropertyBlock();
+
+        blockWhiteColor.SetColor("_Color", Color.white);
+        blockRedColor.SetColor("_Color", Color.red);
     }
 
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Mouse0))
         {
-            OnClick();
+            CreateNewSpheres();
+            RebuildTransformsArray();
 
-            if (allTransforms.isCreated)
-            {
-                allTransforms.Dispose();
-            }
-            
-            //allTransforms = new TransformAccessArray(spheres.Select(x => x.transform).ToArray());
-            allTransforms = new TransformAccessArray(spheres.Count);
-
-            for (int i = 0; i < spheres.Count; i++)
-            {
-                allTransforms.Add(spheres[i].transform);
-            }
-
-            /*velocities = new NativeArray<Vector3>(spheres.Count, Allocator.Persistent);*/
+            CreateKDTree();
         }
 
         if (spheres.Count > 0)
         {
-            //AdjustSpheresInBorders();
-            //ApplyVelocities();
+            RefreshTreePositions();
+            CheckSphereCollisions();
+
+            AdjustSpheresInBorders();
+            ApplyVelocities();
         }
     }
 
-    private void OnClick()
+    private void CreateNewSpheres()
     {
         var newSpheres = InstantiateNewSpheres(_numOfSphereOnClick);
 
@@ -71,7 +73,7 @@ public class SpheresManager : MonoBehaviour
 
         IniateStateForSpheresJob job = new IniateStateForSpheresJob()
         {
-            random = new Unity.Mathematics.Random((uint)Random.Range(1, 100000)),
+            random = new Unity.Mathematics.Random((uint)UnityEngine.Random.Range(1, 100000)),
             states = states,
             speed = _speed,
             boundsToSpawnIn = _volumeBounds,
@@ -92,6 +94,88 @@ public class SpheresManager : MonoBehaviour
 
         spheres.AddRange(newSpheres);
         sphereStates.AddRange(newSphereStates);
+    }
+
+    private void RebuildTransformsArray()
+    {
+        if (allTransforms.isCreated)
+        {
+            allTransforms.Dispose();
+        }
+
+        allTransforms = new TransformAccessArray(spheres.Count);
+        for (int i = 0; i < spheres.Count; i++)
+        {
+            allTransforms.Add(spheres[i].transform);
+        }
+    }
+
+    private void CreateKDTree()
+    {
+        if (tree.IsCreated)
+        {
+            tree.Dispose();
+        }
+
+        tree = new KDTree(spheres.Count, Allocator.Persistent, KDTree.DefaultKDTreeParams);
+    }
+
+    private void RefreshTreePositions()
+    {
+        NativeArray<float3> nativePositions = new NativeArray<float3>(spheres.Count, Allocator.TempJob);
+        for (int i = 0; i < spheres.Count; i++)
+        {
+            nativePositions[i] = spheres[i].transform.position;
+        }
+
+        var jobHandle = tree.BuildTree(nativePositions);
+
+        jobHandle.Complete();
+
+        nativePositions.Dispose();
+    }
+
+    private void CheckSphereCollisions()
+    {
+        NativeArray<float3> nativePositions = new NativeArray<float3>(spheres.Count, Allocator.TempJob);
+        for (int i = 0; i < spheres.Count; i++)
+        {
+            nativePositions[i] = spheres[i].transform.position;
+        }
+
+        NativeArray<bool> spheresToColor = new NativeArray<bool>(spheres.Count, Allocator.TempJob);
+        for (int i = 0; i < spheresToColor.Length; i++)
+        {
+            spheresToColor[i] = false;
+        }
+
+        CheckSphereCollisionJob job = new CheckSphereCollisionJob()
+        {
+            positions = nativePositions,
+            spheresToColor = spheresToColor,
+            tree = tree,
+            range = sphereToSphereColRange
+        };
+
+        JobHandle jobHandle = job.Schedule(nativePositions.Length, 32);
+        jobHandle.Complete();
+
+        for (int i = 0; i < spheres.Count; i++)
+        {
+            var mr = spheres[i].GetComponent<MeshRenderer>();
+
+            if (spheresToColor[i])
+            {
+                mr.SetPropertyBlock(blockRedColor);
+            }
+            else
+            {
+                mr.SetPropertyBlock(blockWhiteColor);
+            }
+        }
+
+        spheresToColor.Dispose();
+        nativePositions.Dispose();
     }
 
     private void ApplyVelocities()
@@ -171,6 +255,11 @@ public class SpheresManager : MonoBehaviour
         if (allTransforms.isCreated)
         {
             allTransforms.Dispose();
+        }
+
+        if (tree.IsCreated)
+        {
+            tree.Dispose();
         }
     }
 }
