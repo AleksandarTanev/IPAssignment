@@ -1,3 +1,4 @@
+using OtherOctree;
 using Sirenix.OdinInspector;
 using System;
 using System.Collections;
@@ -5,47 +6,34 @@ using System.Linq;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs.LowLevel.Unsafe;
+using Unity.VisualScripting.Antlr3.Runtime.Tree;
 using UnityEngine;
-using static UnityEngine.EventSystems.EventTrigger;
+using static FOctree;
 
 public class TestOctreeUnsafe : MonoBehaviour
 {
     public SpheresManager spheresManager;
 
+    private FOctree tree;
+
+    private void Start()
+    {
+        BuildFlatArray();
+    }
+
     private void Test()
     {
 
-        /*var tree = new NOctree();
-        tree.Build(spheresManager.PlaygroundBounds, 4);*/
     }
 
-    [Space]
-    public static int depth = 2;
-    public static int childrenPerNode = 8;
-
-   // public static FNode[] flatNodeArray;
+    // public static FNode[] flatNodeArray;
 
     [Button("BuildFlatArray")]
     private void BuildFlatArray()
     {
-        FOctree tree = new FOctree();
+        tree = new FOctree();
+        tree.playgroundBounds = spheresManager.PlaygroundBounds;
         tree.BuildTree();
-
-       /* flatNodeArray = new FNode[CalcLengthForDepth(depth)];
-
-        var rootNode = new FNode();
-        rootNode.depth = 0;
-        rootNode.index = 0;
-        rootNode.localIndex = 0;
-        rootNode.levelIndex = 0;
-
-        flatNodeArray[0] = rootNode;
-
-        rootNode.SplitIfPossible();
-
-        Debug.Log(CalcLengthForDepth(depth));
-
-        TestUnsafe();*/
     }
 
     public static int CalcLengthForDepth(int depth)
@@ -60,13 +48,51 @@ public class TestOctreeUnsafe : MonoBehaviour
         return arrayLength;
     }
 
-    /*
-    private unsafe void TestUnsafe()
+    private void OnDrawGizmos()
     {
-        var length = CalcLengthForDepth(depth);
-        var alloc = Allocator.Temp;
+        if (!tree.isCreated)
+        {
+            return;
+        }
 
-        var startPtr = (FNode*)UnsafeUtility.Malloc((sizeof(FNode) * length), JobsUtility.CacheLineSize, alloc);
+        Gizmos.color = Color.green;
+
+        if (Application.isPlaying)
+        {
+            for (int i = 0; i < tree.length; i++)
+            {
+                FNode node = tree.GetNodeAtIndex(i);
+                Gizmos.DrawWireCube(node.bounds.center, node.bounds.size);
+            }
+        }
+    }
+
+    private void OnDestroy()
+    {
+        tree.Dispose();
+    }
+}
+
+public unsafe struct FOctree : IDisposable
+{
+    public bool isCreated;
+
+    public static int depth = 2;
+    public static int childrenPerNode = 8;
+
+    public FNode* startPtr;
+    public int length;
+
+    private Allocator allocator;
+
+    public Bounds playgroundBounds;
+
+    public void BuildTree()
+    {
+        length = CalcLengthForDepth(depth);
+        allocator = Allocator.Persistent;
+
+        startPtr = (FNode*)UnsafeUtility.Malloc((sizeof(FNode) * length), JobsUtility.CacheLineSize, allocator);
 
         var rootNode = new FNode()
         {
@@ -74,61 +100,14 @@ public class TestOctreeUnsafe : MonoBehaviour
             index = 0,
             localIndex = 0,
             levelIndex = 0,
+            bounds = playgroundBounds,
+            tree = this,
         };
 
         *startPtr = rootNode;
         rootNode.SplitIfPossible();
 
-        Debug.Log(*(startPtr + 4)); //Display the last value '5'
-
-        UnsafeUtility.Free(startPtr, alloc);
-    }
-
-    public unsafe void SetNode(FNode* firstElemPointer, int nodeIndex)
-    {
-        FNode* nodePtr = firstElemPointer + nodeIndex;
-
-        *nodePtr = new FNode();
-    }*/
-}
-
-public unsafe struct FOctree
-{
-    public static int depth = 1;
-    public static int childrenPerNode = 8;
-
-    public FNode* startPtr;
-
-    public void BuildTree()
-    {
-        var length = CalcLengthForDepth(depth);
-        var alloc = Allocator.Temp;
-
-        startPtr = (FNode*)UnsafeUtility.Malloc((sizeof(FNode) * length), JobsUtility.CacheLineSize, alloc);
-
-        try
-        {
-            var rootNode = new FNode()
-            {
-                depth = 0,
-                index = 0,
-                localIndex = 0,
-                levelIndex = 0,
-                tree = this,
-            };
-
-            *startPtr = rootNode;
-            rootNode.SplitIfPossible();
-
-        }
-        catch (Exception e)
-        {
-            throw e;
-        }
-        finally
-        {
-            UnsafeUtility.Free(startPtr, alloc);
-        }
+        isCreated = true;
     }
 
     public static int CalcLengthForDepth(int depth)
@@ -141,6 +120,16 @@ public unsafe struct FOctree
         }
 
         return arrayLength;
+    }
+
+    public FNode GetNodeAtIndex(int index)
+    {
+        return *(startPtr + index);
+    }
+
+    public void Dispose()
+    {
+        UnsafeUtility.Free(startPtr, allocator);
     }
 
     public struct FNode
@@ -154,7 +143,7 @@ public unsafe struct FOctree
         public int localIndex; // The index in between the 8 child nodes
         public int levelIndex; // The index in between all nodes on the same level/depth
 
-        //public int[] objects;
+        public Bounds bounds;
 
         public void SplitIfPossible()
         {
@@ -163,20 +152,32 @@ public unsafe struct FOctree
                 return;
             }
 
-            for (int i = 0; i < FOctree.childrenPerNode; i++)
+            float offset = bounds.size.y / 4f;
+            float childLength = bounds.size.y / 2;
+            var childActualSize = new Vector3(childLength, childLength, childLength);
+
+            Bounds[] childBounds = new Bounds[8];
+            childBounds[0] = new Bounds(bounds.center + new Vector3(-offset, -offset,  offset), childActualSize);
+            childBounds[1] = new Bounds(bounds.center + new Vector3( offset, -offset,  offset), childActualSize);
+            childBounds[2] = new Bounds(bounds.center + new Vector3(-offset, -offset, -offset), childActualSize);
+            childBounds[3] = new Bounds(bounds.center + new Vector3( offset, -offset, -offset), childActualSize);
+            childBounds[4] = new Bounds(bounds.center + new Vector3(-offset,  offset,  offset), childActualSize);
+            childBounds[5] = new Bounds(bounds.center + new Vector3( offset,  offset,  offset), childActualSize);
+            childBounds[6] = new Bounds(bounds.center + new Vector3(-offset,  offset, -offset), childActualSize);
+            childBounds[7] = new Bounds(bounds.center + new Vector3( offset,  offset, -offset), childActualSize);
+
+            for (int i = 0; i < childrenPerNode; i++)
             {
-                // Create child node
                 FNode newNode = new FNode();
                 newNode.depth = depth + 1;
                 newNode.localIndex = i;
                 newNode.levelIndex = levelIndex * FOctree.childrenPerNode + i;
-                newNode.index = FOctree.CalcLengthForDepth(depth) + newNode.levelIndex;
+                newNode.index = CalcLengthForDepth(depth) + newNode.levelIndex;
                 newNode.tree = tree;
-                //newNode.objects = new int[2] { 33, 51 };
+                newNode.bounds = childBounds[i];
 
                 var newPtr = (tree.startPtr + newNode.index);
                 *newPtr = newNode;
-                //TestOctreeUnsafe.flatNodeArray[newNode.index] = newNode;
 
                 newNode.SplitIfPossible();
             }
@@ -187,25 +188,4 @@ public unsafe struct FOctree
             return $"depth [{depth}] | index[{index}]";
         }
     }
-}
-
-
-
-public unsafe static class TestUnsafe
-{
-    public static void Do()
-    {
-        int[] intArray = new int[5] { 1, 2, 3, 4, 5 };
-
-        fixed (int* arrayPtr = &intArray[0])
-        {
-            Debug.Log(*(arrayPtr + 4)); //Display the last value '5'
-        }
-    }
-}
-
-[NativeContainer]
-public unsafe struct TestConteiner
-{
-
 }
