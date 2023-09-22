@@ -6,7 +6,7 @@ using Unity.Jobs;
 using UnityEngine;
 
 [BurstCompile]
-public struct AdjustSpheresInBordersJob : IJobParallelFor
+public struct ContainSpheresInPlaygroundJob : IJobParallelFor
 {
     [ReadOnly]
     public float speed;

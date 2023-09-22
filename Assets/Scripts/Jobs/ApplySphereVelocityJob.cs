@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Jobs;
 
 [BurstCompile]
-public struct SphereVelocityJob : IJobParallelForTransform
+public struct ApplySphereVelocityJob : IJobParallelForTransform
 {
     [ReadOnly]
     public float deltaTime;

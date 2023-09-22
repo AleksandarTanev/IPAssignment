@@ -946,11 +946,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
   material: {fileID: 2100000, guid: 1497b0b720b5d3c4fb46e1fc4e30723a, type: 2}
-  _numOfSphereOnClick: 2000
+  _numOfSphereOnClick: 1000
   _volumeBounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 25, y: 25, z: 25}
   _speed: 5
+  _secondsSphereToBeRed: 0.2
   spherePrefab: {fileID: 2106115191}
   spheres: []
 --- !u!1 &1940052486
