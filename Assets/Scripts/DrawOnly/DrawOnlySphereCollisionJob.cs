@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -5,7 +7,7 @@ using Unity.Mathematics;
 using UnityEngine;
 
 [BurstCompile]
-public struct SphereCollisionJob : IJobParallelFor
+public struct DrawOnlySphereCollisionJob : IJobParallelFor
 {
     public float secondsSphereToBeRed;
 
@@ -16,8 +18,7 @@ public struct SphereCollisionJob : IJobParallelFor
     [ReadOnly]
     public NativeArray<float3> positions;
 
-    public NativeArray<float> spheresRedColorTime;
-    public NativeArray<Vector3> velocities;
+    public NativeArray<DrawOnlySphereState> states;
 
     // Detecting and reacting to only one collision, the rest are ignored
     public void Execute(int index)
@@ -27,12 +28,12 @@ public struct SphereCollisionJob : IJobParallelFor
         NativeArray<KDTree.Neighbour> neighbours = new NativeArray<KDTree.Neighbour>(100, Allocator.Temp);
         int count = tree.GetEntriesInRange(positionToCheck, range, ref neighbours);
 
+
         int collisionSphereIndex = -1;
         for (int i = 0; i < count; i++)
         {
             if (neighbours[i].index != index)
             {
-                spheresRedColorTime[index] = secondsSphereToBeRed;
                 collisionSphereIndex = neighbours[i].index;
                 break;
             }
@@ -40,7 +41,12 @@ public struct SphereCollisionJob : IJobParallelFor
 
         if (collisionSphereIndex != -1)
         {
-            velocities[index] = RecalculateVelocityAfterCollusion(positions[index], positions[collisionSphereIndex]);
+            var state = states[index];
+
+            state.timeLeftToBeRed = secondsSphereToBeRed;
+            state.velocity = RecalculateVelocityAfterCollusion(positions[index], positions[collisionSphereIndex]);
+
+            states[index] = state;
         }
 
         neighbours.Dispose();

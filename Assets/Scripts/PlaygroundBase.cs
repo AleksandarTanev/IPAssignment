@@ -4,5 +4,9 @@ using UnityEngine;
 
 public abstract class PlaygroundBase : MonoBehaviour
 {
+    public bool showPlaygroundBordersInScene;
+
     public abstract int GetSpheresCount();
+    public abstract int GetMinSpheresOnClick();
+    public abstract int GetMaxSpheresOnClick();
 }

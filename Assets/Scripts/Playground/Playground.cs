@@ -8,6 +8,7 @@ using UnityEngine.UIElements;
 using Unity.Mathematics;
 using static Unity.Collections.AllocatorManager;
 using System;
+using OtherOctree;
 
 public class Playground : PlaygroundBase
 {
@@ -22,12 +23,11 @@ public class Playground : PlaygroundBase
     [Space]
     [SerializeField] private float _speed;
     [SerializeField] private float _secondsSphereToBeRed;
-    [SerializeField] private float _collisionRange;
 
     [Space]
     [SerializeField] private GameObject _spherePrefab;
-    [SerializeField] private Mesh mesh;
-    [SerializeField] private Material material;
+    [SerializeField] private Mesh _mesh;
+    [SerializeField] private Material _material;
 
     private List<GameObject> _spheres;
 
@@ -39,6 +39,8 @@ public class Playground : PlaygroundBase
 
     private MaterialPropertyBlock _blockWhiteColor;
     private MaterialPropertyBlock _blockRedColor;
+
+    private float _collisionRange;
 
     private void Start()
     {
@@ -60,7 +62,7 @@ public class Playground : PlaygroundBase
         {
             CreateNewSpheres();
             RebuildTransformsArray();
-
+            CreateNewColorsArray();
             CreateKDTree();
         }
 
@@ -88,7 +90,7 @@ public class Playground : PlaygroundBase
 
         InitiateStateForSpheresJob job = new InitiateStateForSpheresJob()
         {
-            randomSeed = (uint)DateTime.UtcNow.Second,
+            randomSeed = (uint)DateTime.UtcNow.Millisecond,
             states = states,
             speed = _speed,
             boundsToSpawnIn = _volumeBounds,
@@ -109,7 +111,10 @@ public class Playground : PlaygroundBase
 
         _spheres.AddRange(newSpheres);
         _sphereStates.AddRange(newSphereStates);
+    }
 
+    private void CreateNewColorsArray()
+    {
         if (spheresRedColorTime.IsCreated)
         {
             spheresRedColorTime.Dispose();
@@ -280,6 +285,8 @@ public class Playground : PlaygroundBase
     }
 
     public override int GetSpheresCount() => _spheres.Count;
+    public override int GetMinSpheresOnClick() => _minNumOfSphereOnClick;
+    public override int GetMaxSpheresOnClick() => _maxNumOfSphereOnClick;
 
     public void Clear()
     {
@@ -309,6 +316,15 @@ public class Playground : PlaygroundBase
         if (spheresRedColorTime.IsCreated)
         {
             spheresRedColorTime.Dispose();
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (showPlaygroundBordersInScene)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireCube(PlaygroundBounds.center, PlaygroundBounds.size);
         }
     }
 }
