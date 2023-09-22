@@ -6,6 +6,7 @@ using Unity.Burst;
 [BurstCompile]
 public struct IniateStateForSpheresJob : IJobParallelFor
 {
+    public uint randomSeed;
     public float speed;
     public Bounds boundsToSpawnIn;
 
@@ -17,15 +18,28 @@ public struct IniateStateForSpheresJob : IJobParallelFor
     {
         var newState = new SphereState();
 
-        newState.velocity = GetRandomDirection() * speed;
+        random = new Unity.Mathematics.Random(randomSeed + (uint)(index * 4) + 1);
+
+        var direction = GetRandomDirection(index);
+        newState.velocity = direction * speed;
         newState.startingPosition = GetRandomPositionInBounds(boundsToSpawnIn);
 
         states[index] = newState;
     }
 
-    private Vector3 GetRandomDirection()
+    private Vector3 GetRandomDirection(int index)
     {
-        return (new Vector3(random.NextFloat(-1f, 1f), random.NextFloat(-1f, 1f), random.NextFloat(-1f, 1f))).normalized;
+        // Making sure for a more random result, as without this X is almost always between -1 and 0
+        for (int i = 0; i < index; i++)
+        {
+            random.NextFloat(-1f, 1f);
+        }
+
+        float x = random.NextFloat(-1f, 1f);
+        float y = random.NextFloat(-1f, 1f);
+        float z = random.NextFloat(-1f, 1f);
+
+        return (new Vector3(x, y, z)).normalized;
     }
 
     private Vector3 GetRandomPositionInBounds(Bounds bounds)

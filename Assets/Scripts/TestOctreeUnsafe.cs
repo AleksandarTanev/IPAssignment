@@ -7,11 +7,10 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
-using static FOctree;
 
 public class TestOctreeUnsafe : MonoBehaviour
 {
-    public SpheresManager spheresManager;
+   /* public SpheresManager spheresManager;
 
     private FOctree tree;
 
@@ -107,9 +106,9 @@ public class TestOctreeUnsafe : MonoBehaviour
     private void OnDestroy()
     {
         //tree.Dispose();
-    }
+    }*/
 }
-
+/*
 [NativeContainer]
 [NativeContainerSupportsMinMaxWriteRestriction]
 public unsafe struct FOctree : IDisposable
@@ -261,4 +260,4 @@ public unsafe struct FOctree : IDisposable
             return $"depth [{depth}] | index[{index}]";
         }
     }
-}
+}*/

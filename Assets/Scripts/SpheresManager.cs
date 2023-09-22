@@ -7,6 +7,7 @@ using System.Linq;
 using UnityEngine.UIElements;
 using Unity.Mathematics;
 using static Unity.Collections.AllocatorManager;
+using System;
 
 public class SpheresManager : MonoBehaviour
 {
@@ -73,7 +74,7 @@ public class SpheresManager : MonoBehaviour
 
         IniateStateForSpheresJob job = new IniateStateForSpheresJob()
         {
-            random = new Unity.Mathematics.Random((uint)UnityEngine.Random.Range(1, 100000)),
+            randomSeed = (uint)DateTime.UtcNow.Second,
             states = states,
             speed = _speed,
             boundsToSpawnIn = _volumeBounds,
@@ -86,7 +87,7 @@ public class SpheresManager : MonoBehaviour
         for (int i = 0; i < states.Length; i++)
         {
             newSpheres[i].transform.position = states[i].startingPosition;
-
+            newSpheres[i].gameObject.name = i.ToString();
             newSphereStates.Add(states[i]);
         }
 
@@ -164,7 +165,7 @@ public class SpheresManager : MonoBehaviour
         {
             var mr = spheres[i].GetComponent<MeshRenderer>();
 
-            if (spheresToColor[i])
+            if (spheresToColor[i] == true)
             {
                 mr.SetPropertyBlock(blockRedColor);
             }
