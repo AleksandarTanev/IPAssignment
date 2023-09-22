@@ -11,6 +11,10 @@ using System;
 
 public class SpheresManager : MonoBehaviour
 {
+    public Mesh mesh;
+    public Material material;
+
+    [Space]
     [Range(1, 10000)]
     [SerializeField] private int _numOfSphereOnClick;
     [SerializeField] private Bounds _volumeBounds;
@@ -63,6 +67,13 @@ public class SpheresManager : MonoBehaviour
 
             AdjustSpheresInBorders();
             ApplyVelocities();
+
+            for (int i = 0; i < allTransforms.length; i++)
+            {
+                var tr = allTransforms[i];
+
+                Graphics.DrawMesh(mesh, tr.position, Quaternion.identity, material, 0, Camera.main, 0, blockRedColor);
+            }
         }
     }
 
@@ -244,7 +255,7 @@ public class SpheresManager : MonoBehaviour
         for (int i = 0; i < num; i++)
         {
             var newSphere = Instantiate(spherePrefab);
-            newSphere.gameObject.SetActive(true);
+            //newSphere.gameObject.SetActive(true);
             newSpheres.Add(newSphere);
         }
 
