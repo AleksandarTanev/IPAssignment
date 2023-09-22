@@ -9,16 +9,16 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _fpsText;
 
     private float _deltaTime;
-    private Playground manager;
+    private Playground playground;
 
     private void Start()
     {
-        manager = FindObjectOfType<Playground>();
+        playground = FindObjectOfType<Playground>();
     }
 
     private void Update()
     {
-        _ballCountText.text = manager.SpheresCount.ToString();
+        _ballCountText.text = playground.SpheresCount.ToString();
 
         _deltaTime += (Time.deltaTime - _deltaTime) * 0.1f;
         float fps = 1.0f / _deltaTime;

@@ -16,17 +16,21 @@ public class Playground : MonoBehaviour
     public List<GameObject> Spheres => _spheres;
 
     [Space]
-    [Range(1, 10000)]
-    [SerializeField] private int _numOfSphereOnClick;
+    [SerializeField] private int _minNumOfSphereOnClick;
+    [SerializeField] private int _maxNumOfSphereOnClick;
+    [Space]
     [SerializeField] private Bounds _volumeBounds;
+    [Space]
     [SerializeField] private float _speed;
     [SerializeField] private float _secondsSphereToBeRed;
     [SerializeField] private float _collisionRange;
 
     [Space]
     [SerializeField] private GameObject _spherePrefab;
+    [SerializeField] private Mesh mesh;
+    [SerializeField] private Material material;
 
-    private List<GameObject> _spheres = new List<GameObject>();
+    private List<GameObject> _spheres;
 
     private TransformAccessArray _allTransforms;
     private NativeArray<float> spheresRedColorTime;
@@ -34,22 +38,20 @@ public class Playground : MonoBehaviour
 
     private KDTree _tree;
 
-    private MaterialPropertyBlock blockWhiteColor;
-    private MaterialPropertyBlock blockRedColor;
-
-    public Mesh mesh;
-    public Material material;
+    private MaterialPropertyBlock _blockWhiteColor;
+    private MaterialPropertyBlock _blockRedColor;
 
     private void Start()
     {
         _collisionRange = _spherePrefab.transform.localScale.x;
 
-        blockWhiteColor = new MaterialPropertyBlock();
-        blockRedColor = new MaterialPropertyBlock();
+        _blockWhiteColor = new MaterialPropertyBlock();
+        _blockRedColor = new MaterialPropertyBlock();
 
-        blockWhiteColor.SetColor("_Color", Color.white);
-        blockRedColor.SetColor("_Color", Color.red);
+        _blockWhiteColor.SetColor("_Color", Color.white);
+        _blockRedColor.SetColor("_Color", Color.red);
 
+        _spheres = new List<GameObject>();
         _sphereStates = new List<SphereState>();
     }
 
@@ -70,20 +72,18 @@ public class Playground : MonoBehaviour
 
             ContainSpheresInPlayground();
             ApplyVelocities();
+        }
 
-            /*
-            for (int i = 0; i < allTransforms.length; i++)
-            {
-                var tr = allTransforms[i];
-
-                Graphics.DrawMesh(mesh, tr.position, Quaternion.identity, material, 0, Camera.main, 0, blockRedColor);
-            }*/
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            Clear();
         }
     }
 
     private void CreateNewSpheres()
     {
-        var newSpheres = InstantiateNewSpheres(_numOfSphereOnClick);
+        int numOfSphere = UnityEngine.Random.Range(_minNumOfSphereOnClick, _maxNumOfSphereOnClick);
+        var newSpheres = InstantiateNewSpheres(numOfSphere);
 
         NativeArray<SphereState> states = new NativeArray<SphereState>(newSpheres.Count, Allocator.TempJob);
 
@@ -191,7 +191,7 @@ public class Playground : MonoBehaviour
 
             if (spheresRedColorTime[i] > 0)
             {
-                mr.SetPropertyBlock(blockRedColor);
+                mr.SetPropertyBlock(_blockRedColor);
                 spheresRedColorTime[i] -= Time.deltaTime;
 
                 var state = _sphereStates[i];
@@ -200,7 +200,7 @@ public class Playground : MonoBehaviour
             }
             else
             {
-                mr.SetPropertyBlock(blockWhiteColor);
+                mr.SetPropertyBlock(_blockWhiteColor);
             }
         }
 
@@ -278,6 +278,19 @@ public class Playground : MonoBehaviour
         }
 
         return newSpheres;
+    }
+
+    public void Clear()
+    {
+        for (int i = 0; i < _spheres.Count; i++)
+        {
+            Destroy(_spheres[i].gameObject);
+        }
+
+        _spheres.Clear();
+        _sphereStates.Clear();
+
+        OnDestroy();
     }
 
     private void OnDestroy()
