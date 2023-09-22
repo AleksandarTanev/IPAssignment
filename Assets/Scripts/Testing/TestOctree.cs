@@ -8,7 +8,6 @@ public class TestOctree : MonoBehaviour
     [Space]
     public BoxCollider boxColliderToSearchIn;
 
-    //public GameObject[] worldObjects;
     public int nodeMinSize = 5;
 
     private Octree octree;
@@ -17,29 +16,14 @@ public class TestOctree : MonoBehaviour
 
     [Space]
     public Collider cool_1;
-    public Collider cool_2;
-
 
     private void Start()
     {
         block = new MaterialPropertyBlock();
-        /*
-        OctreeObject[] obs = new OctreeObject[worldObjects.Length];
-        for (int i = 0; i < obs.Length; i++)
-        {
-            obs[i] = new OctreeObject(worldObjects[i].GetComponent<Collider>().bounds, i);
-        }
-
-        octree = new Octree(obs, nodeMinSize);*/
     }
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Q))
-        {
-            Debug.Log(cool_1.bounds.Intersects(cool_2.bounds));
-        }
-
         if (spheresManager.spheres == null || spheresManager.spheres.Count == 0)
         {
             return;
@@ -57,7 +41,6 @@ public class TestOctree : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        //return;
         if (octree == null || octree.rootNode == null)
         {
             return;

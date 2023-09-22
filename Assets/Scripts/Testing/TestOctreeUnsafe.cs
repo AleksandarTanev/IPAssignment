@@ -10,14 +10,13 @@ using UnityEngine;
 
 public class TestOctreeUnsafe : MonoBehaviour
 {
-   /* public SpheresManager spheresManager;
+    public SpheresManager spheresManager;
 
     private FOctree tree;
 
     private void Start()
     {
         //BuildTree();
-
     }
 
     [Button("Test KDTree")]
@@ -48,42 +47,6 @@ public class TestOctreeUnsafe : MonoBehaviour
         tree.Dispose();
     }
 
-    // public static FNode[] flatNodeArray;
-
-    //[Button("BuildTree")]
-    private void BuildTree()
-    {
-        if (tree.isCreated)
-        {
-            tree.Dispose();
-        }
-
-        tree = new FOctree();
-        tree.playgroundBounds = spheresManager.PlaygroundBounds;
-        tree.BuildTree();
-
-        var a = tree.GetNodeAtIndex(4);
-
-        NativeHashSet<int> asd = new NativeHashSet<int>(1, Allocator.Temp);
-        asd.Add(123);
-        asd.Add(23);
-        asd.Add(55);
-
-        asd.Dispose();
-    }
-
-    public static int CalcLengthForDepth(int depth)
-    {
-        int arrayLength = 1;
-
-        for (int i = 1; i <= depth; i++)
-        {
-            arrayLength += (int)Mathf.Pow(childrenPerNode, i);
-        }
-
-        return arrayLength;
-    }
-
     private void OnDrawGizmos()
     {
         if (!tree.isCreated)
@@ -97,7 +60,7 @@ public class TestOctreeUnsafe : MonoBehaviour
         {
             for (int i = 0; i < tree.m_Length; i++)
             {
-                FNode node = tree.GetNodeAtIndex(i);
+                FOctree.FNode node = tree.GetNodeAtIndex(i);
                 Gizmos.DrawWireCube(node.bounds.center, node.bounds.size);
             }
         }
@@ -106,9 +69,9 @@ public class TestOctreeUnsafe : MonoBehaviour
     private void OnDestroy()
     {
         //tree.Dispose();
-    }*/
+    }
 }
-/*
+
 [NativeContainer]
 [NativeContainerSupportsMinMaxWriteRestriction]
 public unsafe struct FOctree : IDisposable
@@ -206,7 +169,7 @@ public unsafe struct FOctree : IDisposable
 
         public Bounds bounds;
 
-        public NativeHashSet<int> content;
+        //public NativeHashSet<int> content;
 
         public void SplitIfPossible(FOctree tree)
         {
@@ -245,7 +208,7 @@ public unsafe struct FOctree : IDisposable
             }
         }
 
-        public void AddObject(int x)
+        /*public void AddObject(int x)
         {
             if (!content.IsCreated)
             {
@@ -253,11 +216,11 @@ public unsafe struct FOctree : IDisposable
             }
 
             content.Add(x);
-        }
+        }*/
 
         public override string ToString()
         {
             return $"depth [{depth}] | index[{index}]";
         }
     }
-}*/
+}
