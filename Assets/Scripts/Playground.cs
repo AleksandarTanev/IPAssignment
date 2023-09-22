@@ -9,10 +9,11 @@ using Unity.Mathematics;
 using static Unity.Collections.AllocatorManager;
 using System;
 
-public class SpheresManager : MonoBehaviour
+public class Playground : MonoBehaviour
 {
-    public Mesh mesh;
-    public Material material;
+    public Bounds PlaygroundBounds => _volumeBounds;
+    public int SpheresCount => _spheres.Count;
+    public List<GameObject> Spheres => _spheres;
 
     [Space]
     [Range(1, 10000)]
@@ -20,36 +21,36 @@ public class SpheresManager : MonoBehaviour
     [SerializeField] private Bounds _volumeBounds;
     [SerializeField] private float _speed;
     [SerializeField] private float _secondsSphereToBeRed;
+    [SerializeField] private float _collisionRange;
 
     [Space]
-    [SerializeField] private GameObject spherePrefab;
-    private float sphereToSphereColRange;
+    [SerializeField] private GameObject _spherePrefab;
 
-    public int SpheresCount => spheres.Count;
+    private List<GameObject> _spheres = new List<GameObject>();
 
-    public List<GameObject> spheres = new List<GameObject>();
-
-    private TransformAccessArray allTransforms;
-
-    private List<SphereState> sphereStates = new List<SphereState>();
+    private TransformAccessArray _allTransforms;
     private NativeArray<float> spheresRedColorTime;
+    private List<SphereState> _sphereStates;
 
-    private KDTree tree;
-
-    public Bounds PlaygroundBounds => _volumeBounds;
+    private KDTree _tree;
 
     private MaterialPropertyBlock blockWhiteColor;
     private MaterialPropertyBlock blockRedColor;
 
+    public Mesh mesh;
+    public Material material;
+
     private void Start()
     {
-        sphereToSphereColRange = spherePrefab.transform.localScale.x;
+        _collisionRange = _spherePrefab.transform.localScale.x;
 
         blockWhiteColor = new MaterialPropertyBlock();
         blockRedColor = new MaterialPropertyBlock();
 
         blockWhiteColor.SetColor("_Color", Color.white);
         blockRedColor.SetColor("_Color", Color.red);
+
+        _sphereStates = new List<SphereState>();
     }
 
     private void Update()
@@ -62,7 +63,7 @@ public class SpheresManager : MonoBehaviour
             CreateKDTree();
         }
 
-        if (spheres.Count > 0)
+        if (_spheres.Count > 0)
         {
             RefreshTreePositions();
             CheckSphereCollisions();
@@ -86,7 +87,7 @@ public class SpheresManager : MonoBehaviour
 
         NativeArray<SphereState> states = new NativeArray<SphereState>(newSpheres.Count, Allocator.TempJob);
 
-        IniateStateForSpheresJob job = new IniateStateForSpheresJob()
+        InitiateStateForSpheresJob job = new InitiateStateForSpheresJob()
         {
             randomSeed = (uint)DateTime.UtcNow.Second,
             states = states,
@@ -107,49 +108,49 @@ public class SpheresManager : MonoBehaviour
 
         states.Dispose();
 
-        spheres.AddRange(newSpheres);
-        sphereStates.AddRange(newSphereStates);
+        _spheres.AddRange(newSpheres);
+        _sphereStates.AddRange(newSphereStates);
 
         if (spheresRedColorTime.IsCreated)
         {
             spheresRedColorTime.Dispose();
         }
-        spheresRedColorTime = new NativeArray<float>(spheres.Count, Allocator.Persistent);
+        spheresRedColorTime = new NativeArray<float>(_spheres.Count, Allocator.Persistent);
     }
 
     private void RebuildTransformsArray()
     {
-        if (allTransforms.isCreated)
+        if (_allTransforms.isCreated)
         {
-            allTransforms.Dispose();
+            _allTransforms.Dispose();
         }
 
-        allTransforms = new TransformAccessArray(spheres.Count);
-        for (int i = 0; i < spheres.Count; i++)
+        _allTransforms = new TransformAccessArray(_spheres.Count);
+        for (int i = 0; i < _spheres.Count; i++)
         {
-            allTransforms.Add(spheres[i].transform);
+            _allTransforms.Add(_spheres[i].transform);
         }
     }
 
     private void CreateKDTree()
     {
-        if (tree.IsCreated)
+        if (_tree.IsCreated)
         {
-            tree.Dispose();
+            _tree.Dispose();
         }
 
-        tree = new KDTree(spheres.Count, Allocator.Persistent, KDTree.DefaultKDTreeParams);
+        _tree = new KDTree(_spheres.Count, Allocator.Persistent, KDTree.DefaultKDTreeParams);
     }
 
     private void RefreshTreePositions()
     {
-        NativeArray<float3> nativePositions = new NativeArray<float3>(spheres.Count, Allocator.TempJob);
-        for (int i = 0; i < spheres.Count; i++)
+        NativeArray<float3> nativePositions = new NativeArray<float3>(_spheres.Count, Allocator.TempJob);
+        for (int i = 0; i < _spheres.Count; i++)
         {
-            nativePositions[i] = spheres[i].transform.position;
+            nativePositions[i] = _spheres[i].transform.position;
         }
 
-        var jobHandle = tree.BuildTree(nativePositions);
+        var jobHandle = _tree.BuildTree(nativePositions);
 
         jobHandle.Complete();
 
@@ -158,16 +159,16 @@ public class SpheresManager : MonoBehaviour
 
     private void CheckSphereCollisions()
     {
-        NativeArray<Vector3> velocities = new NativeArray<Vector3>(spheres.Count, Allocator.TempJob);
-        for (int i = 0; i < spheres.Count; i++)
+        NativeArray<Vector3> velocities = new NativeArray<Vector3>(_spheres.Count, Allocator.TempJob);
+        for (int i = 0; i < _spheres.Count; i++)
         {
-            velocities[i] = sphereStates[i].velocity;
+            velocities[i] = _sphereStates[i].velocity;
         }
 
-        NativeArray<float3> nativePositions = new NativeArray<float3>(spheres.Count, Allocator.TempJob);
-        for (int i = 0; i < spheres.Count; i++)
+        NativeArray<float3> nativePositions = new NativeArray<float3>(_spheres.Count, Allocator.TempJob);
+        for (int i = 0; i < _spheres.Count; i++)
         {
-            nativePositions[i] = spheres[i].transform.position;
+            nativePositions[i] = _spheres[i].transform.position;
         }
 
         SphereCollisionJob job = new SphereCollisionJob()
@@ -177,25 +178,25 @@ public class SpheresManager : MonoBehaviour
             velocities = velocities,
             positions = nativePositions,
             spheresRedColorTime = spheresRedColorTime,
-            tree = tree,
-            range = sphereToSphereColRange
+            tree = _tree,
+            range = _collisionRange
         };
 
         JobHandle jobHandle = job.Schedule(nativePositions.Length, 32);
         jobHandle.Complete();
 
-        for (int i = 0; i < spheres.Count; i++)
+        for (int i = 0; i < _spheres.Count; i++)
         {
-            var mr = spheres[i].GetComponent<MeshRenderer>();
+            var mr = _spheres[i].GetComponent<MeshRenderer>();
 
             if (spheresRedColorTime[i] > 0)
             {
                 mr.SetPropertyBlock(blockRedColor);
                 spheresRedColorTime[i] -= Time.deltaTime;
 
-                var state = sphereStates[i];
+                var state = _sphereStates[i];
                 state.velocity = velocities[i];
-                sphereStates[i] = state;
+                _sphereStates[i] = state;
             }
             else
             {
@@ -209,11 +210,11 @@ public class SpheresManager : MonoBehaviour
 
     private void ApplyVelocities()
     {
-        NativeArray<Vector3> velocities = new NativeArray<Vector3>(spheres.Count, Allocator.TempJob);
+        NativeArray<Vector3> velocities = new NativeArray<Vector3>(_spheres.Count, Allocator.TempJob);
 
-        for (int i = 0; i < spheres.Count; i++)
+        for (int i = 0; i < _spheres.Count; i++)
         {
-            velocities[i] = sphereStates[i].velocity;
+            velocities[i] = _sphereStates[i].velocity;
         }
 
         ApplySphereVelocityJob job = new ApplySphereVelocityJob()
@@ -222,7 +223,7 @@ public class SpheresManager : MonoBehaviour
             deltaTime = Time.deltaTime,
         };
 
-        JobHandle jobHandle = job.Schedule(allTransforms);
+        JobHandle jobHandle = job.Schedule(_allTransforms);
         jobHandle.Complete();
 
         velocities.Dispose();
@@ -230,18 +231,18 @@ public class SpheresManager : MonoBehaviour
 
     private void ContainSpheresInPlayground()
     {
-        NativeArray<Vector3> velocities = new NativeArray<Vector3>(spheres.Count, Allocator.TempJob);
+        NativeArray<Vector3> velocities = new NativeArray<Vector3>(_spheres.Count, Allocator.TempJob);
 
-        for (int i = 0; i < spheres.Count; i++)
+        for (int i = 0; i < _spheres.Count; i++)
         {
-            velocities[i] = sphereStates[i].velocity;
+            velocities[i] = _sphereStates[i].velocity;
         }
 
-        NativeArray<Vector3> positions = new NativeArray<Vector3>(spheres.Count, Allocator.TempJob);
+        NativeArray<Vector3> positions = new NativeArray<Vector3>(_spheres.Count, Allocator.TempJob);
 
-        for (int i = 0; i < spheres.Count; i++)
+        for (int i = 0; i < _spheres.Count; i++)
         {
-            positions[i] = spheres[i].transform.position;
+            positions[i] = _spheres[i].transform.position;
         }
 
         ContainSpheresInPlaygroundJob job = new ContainSpheresInPlaygroundJob()
@@ -252,14 +253,14 @@ public class SpheresManager : MonoBehaviour
             bounds = _volumeBounds
         };
 
-        JobHandle jobHandle = job.Schedule(spheres.Count, 32);
+        JobHandle jobHandle = job.Schedule(_spheres.Count, 32);
         jobHandle.Complete();
 
-        for (int i = 0; i < spheres.Count(); i++)
+        for (int i = 0; i < _spheres.Count(); i++)
         {
-            var st = sphereStates[i];
+            var st = _sphereStates[i];
             st.velocity = velocities[i];
-            sphereStates[i] = st;
+            _sphereStates[i] = st;
         }
 
         velocities.Dispose();
@@ -271,7 +272,7 @@ public class SpheresManager : MonoBehaviour
         List<GameObject> newSpheres = new List<GameObject>();
         for (int i = 0; i < num; i++)
         {
-            var newSphere = Instantiate(spherePrefab);
+            var newSphere = Instantiate(_spherePrefab);
             newSphere.gameObject.SetActive(true);
             newSpheres.Add(newSphere);
         }
@@ -281,14 +282,14 @@ public class SpheresManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (allTransforms.isCreated)
+        if (_allTransforms.isCreated)
         {
-            allTransforms.Dispose();
+            _allTransforms.Dispose();
         }
 
-        if (tree.IsCreated)
+        if (_tree.IsCreated)
         {
-            tree.Dispose();
+            _tree.Dispose();
         }
 
         if (spheresRedColorTime.IsCreated)

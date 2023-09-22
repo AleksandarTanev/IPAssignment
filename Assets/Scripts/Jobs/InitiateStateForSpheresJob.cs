@@ -4,7 +4,7 @@ using UnityEngine;
 using Unity.Burst;
 
 [BurstCompile]
-public struct IniateStateForSpheresJob : IJobParallelFor
+public struct InitiateStateForSpheresJob : IJobParallelFor
 {
     public uint randomSeed;
     public float speed;

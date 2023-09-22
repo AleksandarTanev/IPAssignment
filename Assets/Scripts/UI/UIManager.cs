@@ -9,11 +9,11 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _fpsText;
 
     private float _deltaTime;
-    private SpheresManager manager;
+    private Playground manager;
 
     private void Start()
     {
-        manager = FindObjectOfType<SpheresManager>();
+        manager = FindObjectOfType<Playground>();
     }
 
     private void Update()

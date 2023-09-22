@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class TestOctree : MonoBehaviour
 {
-    public SpheresManager spheresManager;
+    public Playground spheresManager;
 
     [Space]
     public BoxCollider boxColliderToSearchIn;
@@ -24,15 +24,15 @@ public class TestOctree : MonoBehaviour
 
     private void Update()
     {
-        if (spheresManager.spheres == null || spheresManager.spheres.Count == 0)
+        if (spheresManager.Spheres == null || spheresManager.Spheres.Count == 0)
         {
             return;
         }
 
-        OctreeObject[] obs = new OctreeObject[spheresManager.spheres.Count];
+        OctreeObject[] obs = new OctreeObject[spheresManager.Spheres.Count];
         for (int i = 0; i < obs.Length; i++)
         {
-            obs[i] = new OctreeObject(spheresManager.spheres[i].GetComponent<Collider>().bounds, i);
+            obs[i] = new OctreeObject(spheresManager.Spheres[i].GetComponent<Collider>().bounds, i);
         }
         octree = new Octree(obs, nodeMinSize, spheresManager.PlaygroundBounds);
 
@@ -62,9 +62,9 @@ public class TestOctree : MonoBehaviour
     public void Search()
     {
         block.SetColor("_Color", Color.white);
-        for (int i = 0; i < spheresManager.spheres.Count; i++)
+        for (int i = 0; i < spheresManager.Spheres.Count; i++)
         {
-            var mr = spheresManager.spheres[i].GetComponent<MeshRenderer>();
+            var mr = spheresManager.Spheres[i].GetComponent<MeshRenderer>();
             mr.SetPropertyBlock(block);
         }
 
@@ -76,7 +76,7 @@ public class TestOctree : MonoBehaviour
         {
            // Debug.Log(f.GetLocation());
 
-            var mr = spheresManager.spheres[f.index].GetComponent<MeshRenderer>();
+            var mr = spheresManager.Spheres[f.index].GetComponent<MeshRenderer>();
             mr.SetPropertyBlock(block);
         }
     }

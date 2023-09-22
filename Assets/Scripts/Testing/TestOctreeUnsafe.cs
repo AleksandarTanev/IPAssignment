@@ -10,7 +10,7 @@ using UnityEngine;
 
 public class TestOctreeUnsafe : MonoBehaviour
 {
-    public SpheresManager spheresManager;
+    public Playground spheresManager;
 
     private FOctree tree;
 
@@ -22,7 +22,7 @@ public class TestOctreeUnsafe : MonoBehaviour
     [Button("Test KDTree")]
     private void Test()
     {
-        var positions = spheresManager.spheres.Select(x => (float3)x.transform.position).ToArray();
+        var positions = spheresManager.Spheres.Select(x => (float3)x.transform.position).ToArray();
         KDTree tree = new KDTree(positions.Length, Allocator.Persistent, KDTree.DefaultKDTreeParams);
 
         NativeArray<float3> nativePositions = new NativeArray<float3>(positions, Allocator.TempJob);
@@ -31,7 +31,7 @@ public class TestOctreeUnsafe : MonoBehaviour
         nativePositions.Dispose();
 
 
-        float3 asd = spheresManager.spheres[0].transform.position;
+        float3 asd = spheresManager.Spheres[0].transform.position;
         NativeArray<KDTree.Neighbour> neighbours = new NativeArray<KDTree.Neighbour>(100, Allocator.TempJob);
         int count = tree.GetEntriesInRange(asd, 10, ref neighbours);
 

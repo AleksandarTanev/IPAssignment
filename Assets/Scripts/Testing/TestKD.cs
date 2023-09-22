@@ -10,7 +10,7 @@ using UnityEngine;
 
 public class TestKD : MonoBehaviour
 {
-    public SpheresManager spheresManager;
+    public Playground spheresManager;
 
     public GameObject objectToSearchAround;
 
@@ -31,12 +31,12 @@ public class TestKD : MonoBehaviour
     [Button("Build Tree")]
     private void BuildTree()
     {
-        kdTree = new KDTree(spheresManager.spheres.Count, Allocator.Persistent);
+        kdTree = new KDTree(spheresManager.Spheres.Count, Allocator.Persistent);
 
-        positions = new NativeArray<float3>(spheresManager.spheres.Count, Allocator.Persistent);
-        for (int i = 0; i < spheresManager.spheres.Count; i++)
+        positions = new NativeArray<float3>(spheresManager.Spheres.Count, Allocator.Persistent);
+        for (int i = 0; i < spheresManager.Spheres.Count; i++)
         {
-            positions[i] = new float3(spheresManager.spheres[i].transform.position.x, spheresManager.spheres[i].transform.position.y, spheresManager.spheres[i].transform.position.z);
+            positions[i] = new float3(spheresManager.Spheres[i].transform.position.x, spheresManager.Spheres[i].transform.position.y, spheresManager.Spheres[i].transform.position.z);
         }
 
         JobHandle jobHandle = kdTree.BuildTree(positions);
