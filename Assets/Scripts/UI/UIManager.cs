@@ -18,7 +18,7 @@ public class UIManager : MonoBehaviour
 
     private void Update()
     {
-        _ballCountText.text = playground.SpheresCount.ToString();
+        _ballCountText.text = playground.GetSpheresCount().ToString();
 
         _deltaTime += (Time.deltaTime - _deltaTime) * 0.1f;
         float fps = 1.0f / _deltaTime;

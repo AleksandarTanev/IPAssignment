@@ -9,10 +9,9 @@ using Unity.Mathematics;
 using static Unity.Collections.AllocatorManager;
 using System;
 
-public class Playground : MonoBehaviour
+public class Playground : PlaygroundBase
 {
     public Bounds PlaygroundBounds => _volumeBounds;
-    public int SpheresCount => _spheres.Count;
     public List<GameObject> Spheres => _spheres;
 
     [Space]
@@ -279,6 +278,8 @@ public class Playground : MonoBehaviour
 
         return newSpheres;
     }
+
+    public override int GetSpheresCount() => _spheres.Count;
 
     public void Clear()
     {
