@@ -141,8 +141,11 @@ public unsafe struct FOctree : IDisposable
 
     public FNode GetNodeAtIndex(int index)
     {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+
         if (index < m_MinIndex || index > m_MaxIndex)
             Debug.LogError("Index out of range: " + index);
+#endif
 
         return *(rootNodePtr + index);
     }
