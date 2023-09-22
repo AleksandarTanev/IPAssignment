@@ -126,32 +126,6 @@ public class DrawOnlyPlayground : PlaygroundBase
         _metrices = new Matrix4x4[_sphereStates.Length];
     }
 
-    private void CreateNewSpheresStates()
-    {
-        int numOfSphere = UnityEngine.Random.Range(_minNumOfSphereOnClick, _maxNumOfSphereOnClick);
-
-        NativeArray<SphereState> states = new NativeArray<SphereState>(numOfSphere, Allocator.TempJob);
-
-        InitiateStateForSpheresJob job = new InitiateStateForSpheresJob()
-        {
-            randomSeed = (uint)DateTime.UtcNow.Second,
-            states = states,
-            speed = _speed,
-            boundsToSpawnIn = _volumeBounds,
-        };
-
-        JobHandle jobHandle = job.Schedule(numOfSphere, 32);
-        jobHandle.Complete();
-
-        var newSphereStates = new List<SphereState>();
-        for (int i = 0; i < states.Length; i++)
-        {
-            newSphereStates.Add(states[i]);
-        }
-
-        states.Dispose();
-    }
-
     private void CreateKDTree()
     {
         if (_tree.IsCreated)
@@ -266,7 +240,15 @@ public class DrawOnlyPlayground : PlaygroundBase
         Graphics.RenderMeshInstanced(_rpWhite, _mesh, 0, whiteMetrices);
     }
 
-    public override int GetSpheresCount() => _sphereStates.Length;
+    public override int GetSpheresCount()
+    {
+        if (!_sphereStates.IsCreated)
+        {
+            return 0;
+        }
+
+        return _sphereStates.Length;
+    }
 
     public override int GetMinSpheresOnClick() => _minNumOfSphereOnClick;
     public override int GetMaxSpheresOnClick() => _maxNumOfSphereOnClick;
